@@ -12,12 +12,20 @@ import com.shopping.store.repo.ImageRepository;
 import com.shopping.store.repo.ProductRepository;
 import com.shopping.store.request.AddProductRequest;
 import com.shopping.store.request.ProductUpdateRequest;
+import com.shopping.store.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -150,5 +158,37 @@ public class ProductServiceImpl implements ProductService {
         return productDto;
 
 
+    }
+
+    @Override
+    public PageResponse<Product> getAllProductsByPage(int page, int pageSize, String sortBy) {
+
+
+        List<Sort.Order> sorts = new ArrayList<>();
+
+        if (StringUtils.hasLength(sortBy)) {
+            // firstName:asc|desc
+            Pattern pattern = Pattern.compile("(\\w+?)(:)(.*)");
+            Matcher matcher = pattern.matcher(sortBy);
+            if (matcher.find()) {
+                if (matcher.group(3).equalsIgnoreCase("asc")) {
+                    sorts.add(new Sort.Order(Sort.Direction.ASC, matcher.group(1)));
+                } else {
+                    sorts.add(new Sort.Order(Sort.Direction.DESC, matcher.group(1)));
+                }
+            }
+        }
+
+        Pageable pageable= PageRequest.of(page-1,pageSize,Sort.by(sorts));
+        var products = productRepository.findAll(pageable);
+
+        return PageResponse.<Product>builder()
+                .currentPage(page)
+                .pageSize(products.getSize())
+                .totalPages(products.getTotalPages())
+                .totalElements(products.getTotalElements())
+                .data(products.stream().toList())
+
+                .build();
     }
 }

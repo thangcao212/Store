@@ -8,6 +8,7 @@ import com.shopping.store.exception.ResourceNotFoundException;
 import com.shopping.store.request.AddProductRequest;
 import com.shopping.store.request.ProductUpdateRequest;
 import com.shopping.store.response.ApiResponse;
+import com.shopping.store.response.PageResponse;
 import com.shopping.store.service.product.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +31,30 @@ public class ProductController {
         List<Product> products = productService.getAllProducts();
         List<ProductDto> convertedProducts = productService.getConvertedProducts(products);
         return  ResponseEntity.ok(new ApiResponse("success", convertedProducts));
+    }
+    @GetMapping("/allByPage")
+    public ResponseEntity<ApiResponse<PageResponse<ProductDto>>> getAllProductsByPage(
+            @RequestParam(value = "page", required = false, defaultValue = "1") int page,
+            @RequestParam(value = "size", required = false, defaultValue = "10") int size,
+            @RequestParam(required = false) String sortBy) {
+
+        // Get the paginated list of products
+        PageResponse<Product> productPageResponse = productService.getAllProductsByPage(page, size,sortBy);
+
+        // Convert the list of products within the paginated response to DTOs
+        List<ProductDto> convertedProducts = productService.getConvertedProducts(productPageResponse.getData());
+
+        // Create a new PageResponse object with the converted DTOs
+        PageResponse<ProductDto> dtoPageResponse = PageResponse.<ProductDto>builder()
+                .currentPage(productPageResponse.getCurrentPage())
+                .pageSize(productPageResponse.getPageSize())
+                .totalPages(productPageResponse.getTotalPages())
+                .totalElements(productPageResponse.getTotalElements())
+                .data(convertedProducts)
+                .build();
+
+        // Wrap the PageResponse in an ApiResponse and return it
+        return ResponseEntity.ok(new ApiResponse<>("success", dtoPageResponse));
     }
 
     @GetMapping("product/{productId}/product")

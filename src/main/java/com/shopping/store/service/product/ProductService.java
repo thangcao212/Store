@@ -4,6 +4,7 @@ import com.shopping.store.dto.ProductDto;
 import com.shopping.store.entity.Product;
 import com.shopping.store.request.AddProductRequest;
 import com.shopping.store.request.ProductUpdateRequest;
+import com.shopping.store.response.PageResponse;
 
 import java.util.List;
 
@@ -24,4 +25,8 @@ public interface ProductService {
     List<ProductDto> getConvertedProducts(List<Product> products);
 
     ProductDto convertToDto(Product product);
+
+
+
+    PageResponse<Product> getAllProductsByPage(int page, int pageSize, String sort);
 }
